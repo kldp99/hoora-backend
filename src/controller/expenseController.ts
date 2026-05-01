@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Expense } from "../model/expense";
+import { Settlement } from "../model/settlement";
 
 export const splitProcess = ({ amount, participants, splitType }: any) => {
     if (splitType === "unequal") return participants;
@@ -53,6 +54,20 @@ export const getExpenses = async (req: Request, res: Response) => {
 };
 
 export const deleteExpense = async (req: Request, res: Response) => {
-    await Expense.findByIdAndDelete(req.params.id);
-    res.status(200).send({ message: "Deleted successfully" });
+    const expenseId = req.params.id;
+    await Expense.findByIdAndDelete(expenseId);
+    await Settlement.deleteMany({});
+    res.status(200).send({ message: "Expense & related payments deleted" });
+};
+
+export const recordSettlement = async (req: Request, res: Response) => {
+    try {
+        const { from, to, amount } = req.body;
+
+        const settlement = await Settlement.create({ from, to, amount });
+
+        res.status(201).json(settlement);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
 };
